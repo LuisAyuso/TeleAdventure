@@ -9,7 +9,8 @@ import os
 import logging
 
 from subprocess import Popen, PIPE
-
+from threading  import Thread
+from Queue import Queue, Empty
 
 # Enable logging
 formatstr = '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
@@ -24,18 +25,29 @@ class Game:
 
     game_stream = None
 
+    queue = Queue()
+    read_thread = None
+
     def __init__(self):
         print "new game"
-        self.game_stream = Popen(['frotz', '/home/luis/code/tele-adventure/games/zork_1.z5'], stdout=PIPE, stderr=PIPE)
+        p= Popen(['frotz', '/home/luis/code/tele-adventure/games/zork_1.z5'], stdout=PIPE, stdin=PIPE)
+
+        self.game_stream = p
+
+        def  read_f(out, queue):
+            queue.put(out.readline())
+            out.close()
+
+        self.read_thread = Thread(target=read_f, args=(p.stdout, self.queue))
 
     def read_game_status(self):
-
-        text = ""
-        byte = self.game_stream.stdout.read(1)
-        while byte != "":
-            text = text + byte
-            byte = self.game_stream.stdout.read(1)
-        return text
+        try:
+            line = self.queue.get(timeout=1)
+        except Empty:
+            print 'no output yet'
+            return ""
+        else: # got line
+            return line
 
 
 # Define a few command handlers. These usually take the two arguments bot and
@@ -107,9 +119,17 @@ def start_closure(config):
             bot.sendMessage(update.message.chat_id, "already in game")
 
         text = active_games[user.id].read_game_status()
-        bot.sendMessage(update.message.chat_id, text)
+        if len(text) > 0:
+                bot.sendMessage(update.message.chat_id, text)
 
     return start_command_handle
+
+def update_cmd(bot, update):
+
+        user = update.message.from_user
+        text = active_games[user.id].read_game_status()
+        if len(text) > 0:
+                bot.sendMessage(update.message.chat_id, text)
 
 
 def main():
@@ -117,7 +137,7 @@ def main():
     cnf = loadConfig()
     TOKEN = cnf["token"]
     games = cnf["games"]
-    print "donwloads in: ", games
+    print "games in: ", games
 
     # Create the EventHandler and pass it your bot's token.
     updater = Updater(TOKEN)
@@ -130,6 +150,7 @@ def main():
     dp.addTelegramCommandHandler("help", help)
     dp.addTelegramCommandHandler("list_games", ls_closure(cnf))
     dp.addTelegramCommandHandler("start_game", start_closure(cnf))
+    dp.addTelegramCommandHandler("update", update_cmd)
 
     # on noncommand i.e message - echo the message on Telegram
     dp.addTelegramMessageHandler(process_message_closure(cnf))
