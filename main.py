@@ -26,8 +26,16 @@ class Game:
 
     def __init__(self):
         print "new game"
+        self.game_stream = Popen(['frotz', '/home/luis/code/tele-adventure/games/zork_1.z5'], stdout=PIPE, stderr=PIPE)
 
-        process = Popen(['frotz', '/home/luis/code/tele-adventure/games/zork_1.z5', '-d'], stdout=PIPE, stderr=PIPE)
+    def read_game_status(self):
+
+        text = ""
+        byte = self.game_stream.stdout.read(1)
+        while byte != "":
+            text = text + byte
+            byte = self.game_stream.stdout.read(1)
+        return text
 
 
 # Define a few command handlers. These usually take the two arguments bot and
@@ -97,6 +105,9 @@ def start_closure(config):
             active_games[user.id] = Game()
         else:
             bot.sendMessage(update.message.chat_id, "already in game")
+
+        text = active_games[user.id].read_game_status()
+        bot.sendMessage(update.message.chat_id, text)
 
     return start_command_handle
 
