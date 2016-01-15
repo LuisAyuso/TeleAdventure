@@ -8,46 +8,18 @@ import ConfigParser
 import os
 import logging
 
-from subprocess import Popen, PIPE
-from threading  import Thread
-from Queue import Queue, Empty
+from text_game import Game
 
-# Enable logging
-formatstr = '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
-logging.basicConfig(format=formatstr, level=logging.INFO)
 
-logger = logging.getLogger(__name__)
+## Enable logging
+#formatstr = '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+#logging.basicConfig(format=formatstr, level=logging.INFO)
+#
+#logger = logging.getLogger(__name__)
 
 active_games = dict()
 
 
-class Game:
-
-    game_stream = None
-
-    queue = Queue()
-    read_thread = None
-
-    def __init__(self):
-        print "new game"
-        p= Popen(['frotz', '/home/luis/code/tele-adventure/games/zork_1.z5'], stdout=PIPE, stdin=PIPE)
-
-        self.game_stream = p
-
-        def  read_f(out, queue):
-            queue.put(out.readline())
-            out.close()
-
-        self.read_thread = Thread(target=read_f, args=(p.stdout, self.queue))
-
-    def read_game_status(self):
-        try:
-            line = self.queue.get(timeout=1)
-        except Empty:
-            print 'no output yet'
-            return ""
-        else: # got line
-            return line
 
 
 # Define a few command handlers. These usually take the two arguments bot and
@@ -60,14 +32,6 @@ def help(bot, update):
     bot.sendMessage(update.message.chat_id, text='Help! i need somebody:')
     bot.sendMessage(update.message.chat_id, text='/list_games: what games are installed')
     bot.sendMessage(update.message.chat_id, text='/start_game: start a new game')
-
-
-def echo(bot, update):
-
-    if len(update.message.text) == 0:
-        bot.sendMessage(update.message.chat_id, "message not undestood")
-    else:
-        bot.sendMessage(update.message.chat_id, text=update.message.text)
 
 
 def error(bot, update, error):
@@ -90,8 +54,18 @@ def process_message_closure(config):
 
     def process_message(bot, update):
 
-        bot.sendChatAction(update.message.chat_id, ChatAction.TYPING)
-        echo(bot, update)
+        if len(update.message.text) != 0:
+
+            user = update.message.from_user
+            if user.id not in active_games:
+                bot.sendMessage(update.message.chat_id, "not in game")
+            else:
+                command = update.message.text
+                active_games[user.id].send_input(command)
+                text = active_games[user.id].read_game_status(len(command)+1)
+                if len(text) > 0:
+                    # remove echo from sent message
+                    bot.sendMessage(update.message.chat_id, text=text)
 
     return process_message
 
@@ -110,6 +84,7 @@ def ls_closure(config):
 def start_closure(config):
 
     def start_command_handle(bot, update):
+        bot.sendChatAction(update.message.chat_id, ChatAction.TYPING)
 
         # make sure user is not playing
         user = update.message.from_user
@@ -117,12 +92,15 @@ def start_closure(config):
             active_games[user.id] = Game()
         else:
             bot.sendMessage(update.message.chat_id, "already in game")
+        bot.sendMessage(update.message.chat_id, "lets play!")
+        bot.sendChatAction(update.message.chat_id, ChatAction.TYPING)
 
         text = active_games[user.id].read_game_status()
         if len(text) > 0:
                 bot.sendMessage(update.message.chat_id, text)
 
     return start_command_handle
+
 
 def update_cmd(bot, update):
 
