@@ -6,20 +6,9 @@ test test test
 from telegram import (Updater, ChatAction)
 import ConfigParser
 import os
-import logging
-
 from text_game import Game
 
-
-## Enable logging
-#formatstr = '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
-#logging.basicConfig(format=formatstr, level=logging.INFO)
-#
-#logger = logging.getLogger(__name__)
-
 active_games = dict()
-
-
 
 
 # Define a few command handlers. These usually take the two arguments bot and
@@ -89,7 +78,9 @@ def start_closure(config):
         # make sure user is not playing
         user = update.message.from_user
         if user.id not in active_games:
+            print "start game"
             active_games[user.id] = Game()
+            print "game started"
         else:
             bot.sendMessage(update.message.chat_id, "already in game")
         bot.sendMessage(update.message.chat_id, "lets play!")
