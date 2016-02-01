@@ -50,8 +50,11 @@ def process_message_closure(config):
                 bot.sendMessage(update.message.chat_id, "not in game")
             else:
                 command = update.message.text
+                print " send input: ", command
                 active_games[user.id].send_input(command)
+                print " read output: "
                 text = active_games[user.id].read_game_status(len(command)+1)
+                print " send back "
                 if len(text) > 0:
                     # remove echo from sent message
                     bot.sendMessage(update.message.chat_id, text=text)

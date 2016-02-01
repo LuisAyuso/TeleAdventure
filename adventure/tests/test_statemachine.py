@@ -8,35 +8,35 @@ counter = 0
 
 
 class State1(State):
-    def run(self):
+    def run(self, i, machine):
         global counter
         counter += 1
 
-    def next(self, input):
-        if input == 'a':
+    def next(self, i, machine):
+        if i == 'a':
             return State2()
         else:
             return self
 
 
 class State2(State):
-    def run(self):
+    def run(self, i, machine):
         return
 
-    def next(self, input):
-        if input == 'b':
+    def next(self, i, machine):
+        if i == 'b':
             return State1()
         return self
 
 
 class State0(State):
-    def run(self):
+    def run(self, i, machine):
         return
 
-    def next(self, input):
-        if input == 'b':
+    def next(self, i, machine):
+        if i == 'b':
             return State1()
-        if input == 'a':
+        if i == 'a':
             return State2()
 
 
