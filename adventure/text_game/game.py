@@ -1,19 +1,53 @@
 
 from subprocess import Popen, PIPE
 from time import sleep
-import re
 
 from stream_reader import NonBlockingStreamReader
 
-def stripEscape(string):
-    """ Removes all escape sequences from the input string """
-    delete = ""
-    i=1
-    while (i<0x27):
-        delete += chr(i)
-        i += 1
-    t = string.translate(None, delete)
-    return t
+from StateMachine import (State, StateMachine)
+
+class Start(State):
+    def run(self):
+        print "Start filtering"
+
+    def next(self, input):
+        if ord(input) == 27:
+            return EscapeSequence()
+        return PainText()
+
+class Consume(State):
+    def run(self):
+        print "consume one"
+
+    def next(self, input):
+        return PlainText()
+
+class PlainText(State):
+    def run(self):
+        print "we are reading plain text"
+
+    def next(self, input):
+        if ord(input) == 27:
+            return EscapeSequence()
+        return self
+
+
+class EscapeSequence(State):
+    def run(self):
+        print "we are reading an scape sequence"
+
+    def next(self, input):
+        if ord(input) == 109:
+            return Consume()
+        return self
+
+
+class CleanEscapeSequences(StateMachine):
+
+    def __init__(self):
+        # Initial state
+        StateMachine.__init__(self, Start())
+
 
 class Game:
 
@@ -39,11 +73,13 @@ class Game:
 
         print " ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ "
 
-        string = stripEscape(output[0:-5])
+        string = output[0:-5]
+        #for c in string:
+        #    print c, " -> ", ord(c)
 
-        re.sub("\[.+[hdmH]", "", string)
+        print " ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ "
 
-        print string
+        CleanEscapeSequences().runAll(string)
 
         print " ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ DONE"
 

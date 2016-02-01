@@ -1,10 +1,19 @@
 
 
 import unittest
-from text_game import Game
+from adventure.text_game import Game
 
+#how to run: just type nosetest in the root directoy
 
-def TestTextGame(unittest.TestCase):
+class TestTextGame(unittest.TestCase):
 
-    print "success"
+    def test_success(self):
+        print "hello"
+        self.assertTrue(True)
 
+    def test_success2(self):
+        print "hello"
+        self.assertTrue(True)
+
+if __name__ == '__main__':
+    unittest.main()
