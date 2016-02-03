@@ -67,6 +67,8 @@ class TestRealGame(unittest.TestCase):
         print out
         out = ""
 
+        g.kill_game()
+
         self.assertFalse(True)
 
 if __name__ == '__main__':

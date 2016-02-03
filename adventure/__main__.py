@@ -53,7 +53,7 @@ def process_message_closure(config):
                 print " send input: ", command
                 active_games[user.id].send_input(command)
                 print " read output: "
-                text = active_games[user.id].read_game_status(len(command)+1)
+                text = active_games[user.id].read_game_status()
                 print " send back "
                 if len(text) > 0:
                     # remove echo from sent message
